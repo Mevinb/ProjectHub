@@ -9,9 +9,9 @@ services:
       npm install &&
       npx prisma generate --schema=apps/api/prisma/schema.prisma &&
       npm run build --workspace=apps/api
-    # Migrate Supabase DB before each deploy; aborts the deploy on failure.
-    preDeployCommand: npm run db:deploy --workspace=apps/api
-    startCommand: node apps/api/dist/main.js
+    # Free tier has no pre-deploy step, so migrate inline: if the migration
+    # fails the process exits and the deploy is marked failed.
+    startCommand: npm run db:deploy --workspace=apps/api && node apps/api/dist/main.js
     healthCheckPath: /api/v1/health
     envVars:
       - key: NODE_ENV
