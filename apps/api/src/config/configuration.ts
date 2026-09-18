@@ -11,11 +11,12 @@ export default () => ({
     .split(',')
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean),
-  frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:3000',
+  frontendUrl: (process.env.FRONTEND_URL ?? 'http://localhost:3000').split(',')[0].trim().replace(/\/+$/, ''),
   // Comma-separated extra origins (Vercel URL + preview deploys). FRONTEND_URL itself may also be a CSV list.
+  // Trailing slashes stripped: "https://x.vercel.app/" and "https://x.vercel.app" must both match/exact-redirect.
   frontendUrls: ((process.env.FRONTEND_URL ?? 'http://localhost:3000') + ',' + (process.env.FRONTEND_URLS_EXTRA ?? ''))
     .split(',')
-    .map((s) => s.trim())
+    .map((s) => s.trim().replace(/\/+$/, ''))
     .filter(Boolean),
   // 'none' required for Vercel (https) -> Render (https) cross-site cookies. Defaults to none in production, lax locally.
   cookieSameSite: (process.env.COOKIE_SAMESITE ?? (process.env.NODE_ENV === 'production' ? 'none' : 'lax')) as 'lax' | 'none' | 'strict',
