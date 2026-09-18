@@ -10,14 +10,24 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: false, transform: true }),
   );
-  const frontend = process.env.FRONTEND_URL ?? 'http://localhost:3000';
-  // Allow localhost + 127.0.0.1 on any port (dev opens either) plus configured FRONTEND_URL.
-  // Without this, browsers on http://127.0.0.1:3000 get no ACAO header -> "Failed to fetch" on POST.
+  // FRONTEND_URL may be a comma-separated list (prod Vercel URL + local dev).
+  // Always allow local dev hosts + Vercel preview deploys alongside it.
+  // Missing ACAO header = browser "Failed to fetch" on POST, so keep this permissive for our frontends.
+  const frontends = (process.env.FRONTEND_URL ?? 'http://localhost:3000')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
   app.enableCors({
-    origin: [frontend, /^http:\/\/localhost(:\d+)?$/, /^http:\/\/127\.0\.0\.1(:\d+)?$/],
+    origin: [
+      ...frontends,
+      /^http:\/\/localhost(:\d+)?$/,
+      /^http:\/\/127\.0\.0\.1(:\d+)?$/,
+      /^https:\/\/.*\.vercel\.app$/,
+    ],
     credentials: true,
   });
-  const port = Number(process.env.API_PORT ?? 3001);
+  // Render/Heroku inject PORT; local dev uses API_PORT.
+  const port = Number(process.env.PORT ?? process.env.API_PORT ?? 3001);
   await app.listen(port);
   // eslint-disable-next-line no-console
   console.log(`API listening on :${port}/api/v1`);

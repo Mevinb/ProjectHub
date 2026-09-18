@@ -2,7 +2,7 @@
 
 Students publish projects with screenshots, GitHub links, tech stack. Like/upvote/bookmark. Search by technology. Team member profiles.
 
-**Stack:** NestJS API + Next.js Web + Postgres (Prisma). Dockerized. Works with `npm` (pnpm also supported).
+**Stack:** NestJS API + Next.js Web + Postgres (Prisma). Local: docker-compose. Cloud: Supabase (DB + storage) + Render (API) + Vercel (web). See `DEPLOY.md`.
 
 ## Quick start (no Docker)
 
@@ -29,6 +29,16 @@ cp .env.example .env
 docker compose up --build
 # web http://localhost:3000, api http://localhost:3001/api/v1/health
 ```
+
+## Hosted deploy (Vercel + Render + Supabase)
+
+```bash
+# 1. Supabase: Session-pooler DB URI + public `screenshots` bucket
+# 2. Render: New -> Blueprint (render.yaml), fill DATABASE_URL / FRONTEND_URL / SUPABASE_*
+# 3. Vercel: Root Directory apps/web, env NEXT_PUBLIC_API_URL=<render-api>/api/v1
+```
+
+Full steps, gotchas (build-time envs, cookies, CORS): [`DEPLOY.md`](./DEPLOY.md).
 
 ## Repo layout
 

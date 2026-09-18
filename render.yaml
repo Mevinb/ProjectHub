@@ -1,0 +1,36 @@
+# Render blueprint: NestJS API (free tier OK). Web frontend lives on Vercel.
+# Apply via Render dashboard -> New -> Blueprint -> select this repo.
+services:
+  - type: web
+    name: bow-api
+    runtime: node
+    plan: free
+    buildCommand: >-
+      npm install &&
+      npx prisma generate --schema=apps/api/prisma/schema.prisma &&
+      npm run build --workspace=apps/api
+    # Migrate Supabase DB before each deploy; aborts the deploy on failure.
+    preDeployCommand: npm run db:deploy --workspace=apps/api
+    startCommand: node apps/api/dist/main.js
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: STORAGE_DRIVER
+        value: supabase
+      - key: DATABASE_URL
+        sync: false # Supabase -> Connect -> Session pooler URI (port 5432), + ?schema=public
+      - key: JWT_SECRET
+        generateValue: true # 32+ random chars; or paste your own
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: FRONTEND_URL
+        sync: false # your Vercel URL, e.g. https://projecthub.vercel.app
+      - key: ALLOWED_EMAIL_DOMAINS
+        value: "*"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false # server-only secret, never NEXT_PUBLIC_
+      - key: SUPABASE_BUCKET
+        value: screenshots

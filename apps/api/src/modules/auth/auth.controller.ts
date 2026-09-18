@@ -9,11 +9,20 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 const COOKIE = 'bow_token';
 
-function setCookie(res: Response, token: string) {
-  res.cookie(COOKIE, token, {
-    httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production',
+// Vercel frontend -> Render backend is cross-site: browsers only send the
+// cookie when SameSite=None + Secure. Locally we keep Lax (no HTTPS).
+function cookieOpts() {
+  const sameSite = (process.env.COOKIE_SAMESITE ??
+    (process.env.NODE_ENV === 'production' ? 'none' : 'lax')) as 'lax' | 'none' | 'strict';
+  const secure = sameSite === 'none' ? true : process.env.NODE_ENV === 'production';
+  return {
+    httpOnly: true, sameSite, secure,
     maxAge: 7 * 24 * 3600 * 1000, path: '/',
-  });
+  };
+}
+
+function setCookie(res: Response, token: string) {
+  res.cookie(COOKIE, token, cookieOpts());
 }
 
 @Controller('auth')
@@ -36,7 +45,9 @@ export class AuthController {
 
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie(COOKIE, { path: '/' });
+    // Must match set-cookie attrs or the browser keeps the cookie (esp. SameSite=None + Secure).
+    const { httpOnly: _h, maxAge: _m, path: _p, ...clearOpts } = cookieOpts();
+    res.clearCookie(COOKIE, { path: '/', ...clearOpts });
     return { ok: true };
   }
 

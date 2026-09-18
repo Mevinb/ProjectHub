@@ -27,7 +27,7 @@ export class UploadsController {
       cb(null, true);
     },
   }))
-  upload(@UploadedFile() file: Express.Multer.File) {
+  async upload(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file. Max 5MB, jpg/png/webp.');
     return this.uploads.save(file);
   }

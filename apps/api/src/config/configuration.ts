@@ -12,8 +12,21 @@ export default () => ({
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean),
   frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:3000',
+  // Comma-separated extra origins (Vercel URL + preview deploys). FRONTEND_URL itself may also be a CSV list.
+  frontendUrls: ((process.env.FRONTEND_URL ?? 'http://localhost:3000') + ',' + (process.env.FRONTEND_URLS_EXTRA ?? ''))
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
+  // 'none' required for Vercel (https) -> Render (https) cross-site cookies. Defaults to none in production, lax locally.
+  cookieSameSite: (process.env.COOKIE_SAMESITE ?? (process.env.NODE_ENV === 'production' ? 'none' : 'lax')) as 'lax' | 'none' | 'strict',
   uploadDir: process.env.UPLOAD_DIR ?? './data/uploads',
   maxUploadMb: Number(process.env.MAX_UPLOAD_MB ?? 5),
+  storageDriver: process.env.STORAGE_DRIVER ?? 'local',
+  supabase: {
+    url: process.env.SUPABASE_URL ?? '',
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
+    bucket: process.env.SUPABASE_BUCKET ?? 'screenshots',
+  },
   github: {
     clientId: process.env.GITHUB_CLIENT_ID ?? '',
     clientSecret: process.env.GITHUB_CLIENT_SECRET ?? '',
