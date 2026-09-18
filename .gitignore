@@ -6,6 +6,7 @@ data/uploads/*
 !data/uploads/.gitkeep
 .env
 .env.local
+.vercel/
 *.log
 .DS_Store
 coverage/
