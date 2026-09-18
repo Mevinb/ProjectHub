@@ -205,7 +205,7 @@ export class ProjectsService {
       }),
       this.prisma.bookmark.count({ where: { userId } }),
     ]);
-    return { items: rows.map((r) => r.project), total, page, limit, pages: Math.max(1, Math.ceil(total / limit)) };
+    return { items: rows.map((r: any) => r.project), total, page, limit, pages: Math.max(1, Math.ceil(total / limit)) };
   }
 
   async addMember(projectId: string, actor: any, username: string) {

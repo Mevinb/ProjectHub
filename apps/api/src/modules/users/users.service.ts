@@ -29,7 +29,7 @@ export class UsersService {
     return {
       user: sanitize(user),
       owned,
-      contributing: contributing.map((m) => m.project),
+      contributing: contributing.map((m: any) => m.project),
       stats: { owned: owned.length, contributing: contributing.length, upvotesGiven },
     };
   }
