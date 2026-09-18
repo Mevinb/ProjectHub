@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum MemberRole {
+  OWNER
+  MEMBER
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  emailDomain    String
+  passwordHash   String?
+  username       String   @unique
+  name           String
+  avatarUrl      String?
+  bio            String?  @db.Text
+  year           Int?
+  branch         String?
+  githubId       String?  @unique
+  githubUsername String?
+  linkedinUrl    String?
+  role           Role     @default(STUDENT)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  ownedProjects Project[]       @relation("OwnedProjects")
+  memberships   ProjectMember[]
+  upvotes       Upvote[]
+  bookmarks     Bookmark[]
+}
+
+model Project {
+  id           String   @id @default(cuid())
+  title        String
+  slug         String   @unique
+  tagline      String
+  descriptionMd String  @db.Text
+  githubUrl    String
+  demoUrl      String?
+  coverImageUrl String?
+  ownerId      String
+  owner        User     @relation("OwnedProjects", fields: [ownerId], references: [id], onDelete: Cascade)
+  upvoteCount  Int      @default(0)
+  viewCount    Int      @default(0)
+  isPublished  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  images    ProjectImage[]
+  techs     ProjectTech[]
+  members   ProjectMember[]
+  upvotes   Upvote[]
+  bookmarks Bookmark[]
+
+  @@index([createdAt])
+  @@index([upvoteCount])
+  @@index([ownerId])
+}
+
+model ProjectImage {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  url       String
+  sortOrder Int     @default(0)
+
+  @@index([projectId])
+}
+
+model Tech {
+  id       String @id @default(cuid())
+  slug     String @unique
+  name     String @unique
+  category String?
+
+  projects ProjectTech[]
+}
+
+model ProjectTech {
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  techId    String
+  tech      Tech    @relation(fields: [techId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, techId])
+}
+
+model ProjectMember {
+  projectId String
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      MemberRole @default(MEMBER)
+  createdAt DateTime   @default(now())
+
+  @@id([projectId, userId])
+}
+
+model Upvote {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, projectId])
+  @@index([projectId, createdAt])
+}
+
+model Bookmark {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, projectId])
+  @@index([userId, createdAt])
+}
