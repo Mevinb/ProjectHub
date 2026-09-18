@@ -14,7 +14,11 @@ Local docker-compose still works for dev. This is the cloud path.
 ## 1. Supabase setup (10 min)
 
 1. Create project at supabase.com. Save the DB password.
-2. **Database -> Connect -> Session pooler** (not Transaction): copy URI, replace `[YOUR-PASSWORD]`, append `?schema=public` if missing. This is prod `DATABASE_URL`.
+2. **Database -> Connect -> Connection Pooler -> Mode: Session (port 5432)**:
+   - **DO NOT** use the "Direct connection" (`db.<ref>.supabase.co`), because Supabase direct connections are IPv6-only and Render free instances only have IPv4 egress!
+   - Copy the Session Pooler URI. For your project (`knawfhggxlfavyzjubqa` in `ap-south-1`), the format is:
+     `postgresql://postgres.knawfhggxlfavyzjubqa:[YOUR-PASSWORD]@aws-0-ap-south-1.pooler.supabase.com:5432/postgres?schema=public`
+   - Make sure to replace `[YOUR-PASSWORD]` with your actual Supabase DB password.
 3. **Storage -> New bucket** named `screenshots`, toggle **Public ON** (private buckets return 403 image URLs).
 4. **Project Settings -> API**: copy `Project URL` (`SUPABASE_URL`) and `service_role` key (`SUPABASE_SERVICE_ROLE_KEY`, server-only — never `NEXT_PUBLIC_`).
 5. Point local at Supabase once and push schema + seed:
