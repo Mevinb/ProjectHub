@@ -10,13 +10,55 @@ export type ProjectCard = {
   _count: { upvotes: number; bookmarks: number };
 };
 
+// Browsers increasingly block third-party cookies (Chrome default), and our
+// API lives on a different site (Render) than the web app (Vercel) — so the
+// httpOnly cookie alone can't be trusted cross-site. The API also accepts the
+// JWT as `Authorization: Bearer`, so we persist the token from login/signup
+// and send it on every request. Cookie stays as a same-site fallback.
+const TOKEN_KEY = 'bow_token';
+let memToken: string | null = null;
+
+export function getToken(): string | null {
+  if (memToken) return memToken;
+  if (typeof window === 'undefined') return null;
+  try {
+    memToken = window.localStorage.getItem(TOKEN_KEY);
+  } catch {
+    memToken = null;
+  }
+  return memToken;
+}
+
+function saveToken(token: string) {
+  memToken = token;
+  try {
+    window.localStorage.setItem(TOKEN_KEY, token);
+  } catch {
+    /* private mode etc. — cookie fallback still applies */
+  }
+}
+
+function clearToken() {
+  memToken = null;
+  try {
+    window.localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 async function req(path: string, init: RequestInit = {}) {
+  const token = getToken();
   let res: Response;
   try {
     res = await fetch(`${API_URL}${path}`, {
       ...init,
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json', ...(init.headers ?? {}) },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(init.headers ?? {}),
+      },
     });
   } catch {
     throw new Error(
@@ -46,10 +88,24 @@ export const api = {
   bookmark: (id: string) => req(`/projects/${id}/bookmark`, { method: 'POST' }),
   myBookmarks: () => req('/bookmarks/mine') as Promise<{ items: ProjectCard[] }>,
   listTech: (q?: string) => req(`/tech${q ? `?q=${encodeURIComponent(q)}` : ''}`) as Promise<Tech[]>,
-  signup: (body: any) => req('/auth/signup', { method: 'POST', body: JSON.stringify(body) }),
-  login: (body: any) => req('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
+  signup: async (body: any) => {
+    const r = await req('/auth/signup', { method: 'POST', body: JSON.stringify(body) });
+    if (r?.token) saveToken(r.token);
+    return r;
+  },
+  login: async (body: any) => {
+    const r = await req('/auth/login', { method: 'POST', body: JSON.stringify(body) });
+    if (r?.token) saveToken(r.token);
+    return r;
+  },
   me: () => req('/auth/me'),
-  logout: () => req('/auth/logout', { method: 'POST' }),
+  logout: async () => {
+    try {
+      return await req('/auth/logout', { method: 'POST' });
+    } finally {
+      clearToken();
+    }
+  },
   getUser: (username: string) => req(`/users/${username}`),
   updateMe: (body: any) => req('/users/me', { method: 'PATCH', body: JSON.stringify(body) }),
 };

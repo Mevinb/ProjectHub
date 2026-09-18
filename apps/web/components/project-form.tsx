@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, API_URL } from '../lib/api';
+import { api, API_URL, getToken } from '../lib/api';
 
 export function ProjectForm({ initial, slug }: { initial?: any; slug?: string }) {
   const router = useRouter();
@@ -31,8 +31,10 @@ export function ProjectForm({ initial, slug }: { initial?: any; slug?: string })
         fd.append('file', f);
         let res: Response;
         try {
+          const token = getToken();
           res = await fetch(`${API_URL}/uploads`, {
             method: 'POST', body: fd, credentials: 'include',
+            ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
           });
         } catch {
           throw new Error(`Cannot reach API at ${API_URL} for image upload. Is the API running?`);
